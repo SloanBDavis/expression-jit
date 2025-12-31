@@ -1,0 +1,18 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/expr-core",
+    "crates/expr-parse",
+    "crates/expr-x86",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[workspace.dependencies]
+expr-core = { path = "crates/expr-core" }
+expr-parse = { path = "crates/expr-parse" }
+expr-x86 = { path = "crates/expr-x86" }
+libc = "0.2"

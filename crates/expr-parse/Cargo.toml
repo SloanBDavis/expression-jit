@@ -1,0 +1,9 @@
+[package]
+name = "expr-parse"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Lexer and parser for expression language"
+
+[dependencies]
+expr-core.workspace = true
