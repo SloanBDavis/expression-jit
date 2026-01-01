@@ -23,7 +23,9 @@ cargo test
 
 ## Current status
 
-Just starting out and learning!
+Milestone 1 is done. Integer arithmetic works. One can compile expressions with `+ - * /` and parentheses.
+
+Next steps: variables, booleans, comparisons, floating point, error handling, and actual optimizations like register allocation.
 
 ## Example
 
