@@ -89,3 +89,91 @@ impl<'a> Lexer<'a> {
             .map_err(|e| format!("Invalid integer: {}", e))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn lex_all(input: &str) -> Result<Vec<Token>, String> {
+        let mut lexer = Lexer::new(input);
+        let mut tokens = Vec::new();
+        loop {
+            let tok = lexer.next_token()?;
+            if tok == Token::Eof {
+                break;
+            }
+            tokens.push(tok);
+        }
+        Ok(tokens)
+    }
+
+    #[test]
+    fn single_tokens() {
+        assert_eq!(lex_all("+").unwrap(), vec![Token::Plus]);
+        assert_eq!(lex_all("-").unwrap(), vec![Token::Minus]);
+        assert_eq!(lex_all("*").unwrap(), vec![Token::Star]);
+        assert_eq!(lex_all("/").unwrap(), vec![Token::Slash]);
+        assert_eq!(lex_all("(").unwrap(), vec![Token::LParen]);
+        assert_eq!(lex_all(")").unwrap(), vec![Token::RParen]);
+    }
+
+    #[test]
+    fn integers() {
+        assert_eq!(lex_all("0").unwrap(), vec![Token::Integer(0)]);
+        assert_eq!(lex_all("42").unwrap(), vec![Token::Integer(42)]);
+        assert_eq!(lex_all("12345").unwrap(), vec![Token::Integer(12345)]);
+        assert_eq!(
+            lex_all("9223372036854775807").unwrap(),
+            vec![Token::Integer(i64::MAX)]
+        );
+    }
+
+    #[test]
+    fn multiple_tokens() {
+        assert_eq!(
+            lex_all("1 + 2").unwrap(),
+            vec![Token::Integer(1), Token::Plus, Token::Integer(2)]
+        );
+        assert_eq!(
+            lex_all("(1+2)*3").unwrap(),
+            vec![
+                Token::LParen,
+                Token::Integer(1),
+                Token::Plus,
+                Token::Integer(2),
+                Token::RParen,
+                Token::Star,
+                Token::Integer(3)
+            ]
+        );
+    }
+
+    #[test]
+    fn whitespace_handling() {
+        assert_eq!(lex_all("").unwrap(), vec![]);
+        assert_eq!(lex_all("   ").unwrap(), vec![]);
+        assert_eq!(lex_all("  42  ").unwrap(), vec![Token::Integer(42)]);
+        assert_eq!(
+            lex_all("1   +   2").unwrap(),
+            vec![Token::Integer(1), Token::Plus, Token::Integer(2)]
+        );
+        assert_eq!(
+            lex_all("\t\n1\t+\n2\t").unwrap(),
+            vec![Token::Integer(1), Token::Plus, Token::Integer(2)]
+        );
+    }
+
+    #[test]
+    fn invalid_character() {
+        assert!(lex_all("@").is_err());
+        assert!(lex_all("#").is_err());
+        assert!(lex_all("a").is_err());
+        assert!(lex_all("1 + a").is_err());
+    }
+
+    #[test]
+    fn integer_overflow() {
+        // One more than i64::MAX
+        assert!(lex_all("9223372036854775808").is_err());
+    }
+}

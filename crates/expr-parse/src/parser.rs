@@ -92,3 +92,153 @@ impl<'a> Parser<'a> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn parse(input: &str) -> Result<Expr, String> {
+        Parser::new(input)?.parse()
+    }
+
+    fn binop(op: BinOp, left: Expr, right: Expr) -> Expr {
+        Expr::BinaryOp {
+            op,
+            left: Box::new(left),
+            right: Box::new(right),
+        }
+    }
+
+    #[test]
+    fn single_integer() {
+        assert_eq!(parse("42").unwrap(), Expr::Integer(42));
+        assert_eq!(parse("0").unwrap(), Expr::Integer(0));
+    }
+
+    #[test]
+    fn binary_operations() {
+        assert_eq!(
+            parse("1 + 2").unwrap(),
+            binop(BinOp::Add, Expr::Integer(1), Expr::Integer(2))
+        );
+        assert_eq!(
+            parse("3 - 4").unwrap(),
+            binop(BinOp::Sub, Expr::Integer(3), Expr::Integer(4))
+        );
+        assert_eq!(
+            parse("5 * 6").unwrap(),
+            binop(BinOp::Mul, Expr::Integer(5), Expr::Integer(6))
+        );
+        assert_eq!(
+            parse("7 / 8").unwrap(),
+            binop(BinOp::Div, Expr::Integer(7), Expr::Integer(8))
+        );
+    }
+
+    #[test]
+    fn precedence() {
+        // 1 + 2 * 3 should parse as 1 + (2 * 3)
+        assert_eq!(
+            parse("1 + 2 * 3").unwrap(),
+            binop(
+                BinOp::Add,
+                Expr::Integer(1),
+                binop(BinOp::Mul, Expr::Integer(2), Expr::Integer(3))
+            )
+        );
+        // 2 * 3 + 4 should parse as (2 * 3) + 4
+        assert_eq!(
+            parse("2 * 3 + 4").unwrap(),
+            binop(
+                BinOp::Add,
+                binop(BinOp::Mul, Expr::Integer(2), Expr::Integer(3)),
+                Expr::Integer(4)
+            )
+        );
+    }
+
+    #[test]
+    fn associativity() {
+        // 10 - 3 - 2 should parse as (10 - 3) - 2, not 10 - (3 - 2)
+        assert_eq!(
+            parse("10 - 3 - 2").unwrap(),
+            binop(
+                BinOp::Sub,
+                binop(BinOp::Sub, Expr::Integer(10), Expr::Integer(3)),
+                Expr::Integer(2)
+            )
+        );
+        // 20 / 4 / 2 should parse as (20 / 4) / 2
+        assert_eq!(
+            parse("20 / 4 / 2").unwrap(),
+            binop(
+                BinOp::Div,
+                binop(BinOp::Div, Expr::Integer(20), Expr::Integer(4)),
+                Expr::Integer(2)
+            )
+        );
+    }
+
+    #[test]
+    fn parentheses() {
+        // (1 + 2) * 3
+        assert_eq!(
+            parse("(1 + 2) * 3").unwrap(),
+            binop(
+                BinOp::Mul,
+                binop(BinOp::Add, Expr::Integer(1), Expr::Integer(2)),
+                Expr::Integer(3)
+            )
+        );
+        // Nested: ((1))
+        assert_eq!(parse("((1))").unwrap(), Expr::Integer(1));
+        // Deeply nested
+        assert_eq!(parse("((((42))))").unwrap(), Expr::Integer(42));
+    }
+
+    #[test]
+    fn complex_expressions() {
+        // (2 + 3) * (4 - 1)
+        assert_eq!(
+            parse("(2 + 3) * (4 - 1)").unwrap(),
+            binop(
+                BinOp::Mul,
+                binop(BinOp::Add, Expr::Integer(2), Expr::Integer(3)),
+                binop(BinOp::Sub, Expr::Integer(4), Expr::Integer(1))
+            )
+        );
+    }
+
+    #[test]
+    fn error_empty_input() {
+        assert!(parse("").is_err());
+    }
+
+    #[test]
+    fn error_unclosed_paren() {
+        assert!(parse("(1 + 2").is_err());
+        assert!(parse("((1)").is_err());
+    }
+
+    #[test]
+    fn error_extra_close_paren() {
+        assert!(parse("1 + 2)").is_err());
+    }
+
+    #[test]
+    fn error_missing_operand() {
+        assert!(parse("1 +").is_err());
+        assert!(parse("* 2").is_err());
+        assert!(parse("+").is_err());
+    }
+
+    #[test]
+    fn error_missing_operator() {
+        assert!(parse("1 2").is_err());
+    }
+
+    #[test]
+    fn error_trailing_tokens() {
+        assert!(parse("1 + 2 3").is_err());
+    }
+}

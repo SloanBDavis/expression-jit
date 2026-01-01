@@ -8,3 +8,6 @@ description = "x86-64 code generation and runtime for expression JIT"
 [dependencies]
 expr-core.workspace = true
 libc.workspace = true
+
+[dev-dependencies]
+expr-parse.workspace = true

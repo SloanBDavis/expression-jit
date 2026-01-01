@@ -18,6 +18,7 @@ name = "expr-x86"
 version = "0.1.0"
 dependencies = [
  "expr-core",
+ "expr-parse",
  "libc",
 ]
 
